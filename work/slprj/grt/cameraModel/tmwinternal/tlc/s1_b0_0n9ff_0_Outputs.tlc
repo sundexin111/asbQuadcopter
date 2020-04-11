@@ -1,0 +1,139 @@
+%implements s1_b0_0n9ff_0_Outputs "C"
+
+%function Outputs(block, system) Output
+%assign cfgTxt = ""
+%openfile cfgTxt
+%assign localVarDecl = ""
+%openfile localVarDecl
+
+int32_T i;
+int32_T plane;
+int32_T planeOffset;
+int32_T j;
+int32_T indxO;
+int32_T indxI;
+%closefile localVarDecl
+%assign tlcOutputsFcnOfS0B0 = OpaqueTLCBlockFcn("Outputs", 0, 0, 0, 1)
+%if !WHITE_SPACE(tlcOutputsFcnOfS0B0)
+/* {S!d2}S-Function (vrsfunc): '<Root>/On-Board Camera' */
+%<tlcOutputsFcnOfS0B0>\
+%endif
+/* {S!d4}S-Function (sviprotate): '<Root>/Rotate' */
+indxI = 0;
+planeOffset = 119;
+for (plane = 0; plane < 3; plane++) {
+    for (i = 0; i < 120; i++) {
+        indxO = planeOffset - i;
+        for (j = 0; j < 160; j++) {
+            cameraModel_B.Rotate[indxO] = cameraModel_B.OnBoardCamera[indxI];
+            indxI++;
+            indxO += 120;
+        }
+    }
+    planeOffset += 19200;
+}
+/* {E!d4}End of S-Function (sviprotate): '<Root>/Rotate' */
+for (indxI = 0; indxI < 160; indxI++) {
+    for (planeOffset = 0; planeOffset < 120; planeOffset++) {
+        /* {S!d6}Selector: '<S1>/Blue' incorporates:
+ *  Selector: '<S1>/Green'
+ *  Selector: '<S1>/Red'
+ */
+        plane = 120 * indxI + planeOffset;
+        i = planeOffset + 120 * indxI;
+        cameraModel_B.Blue[i] = cameraModel_B.Rotate[plane + 38400];
+        /* {S!d8}Selector: '<S1>/Red' */
+        cameraModel_B.Red[i] = cameraModel_B.Rotate[plane];
+        /* {S!d10}Selector: '<S1>/Green' */
+        cameraModel_B.Green[i] = cameraModel_B.Rotate[plane + 19200];
+    }
+}
+/* {S!d12}S-Function (svipcolorconv): '<S1>/Color Space  Conversion' */
+for (i = 0; i < 19200; i++) {
+    cameraModel_B.ColorSpaceConversion_o1[i] = (uint8_T)((((cameraModel_B.Red[i] * 16829U + cameraModel_B.Green[i] * 33039U) + cameraModel_B.Blue[i] * 6416U) + 1081344U) >> 16);
+    cameraModel_B.ColorSpaceConversion_o2[i] = (uint8_T)((((cameraModel_B.Blue[i] * 28784U - cameraModel_B.Red[i] * 9714U) - cameraModel_B.Green[i] * 19071U) + 8421376U) >> 16);
+    cameraModel_B.ColorSpaceConversion_o3[i] = (uint8_T)((((cameraModel_B.Red[i] * 28784U - cameraModel_B.Blue[i] * 4681U) - cameraModel_B.Green[i] * 24103U) + 8421376U) >> 16);
+}
+/* {E!d12}End of S-Function (svipcolorconv): '<S1>/Color Space  Conversion' */
+
+/* {S!d14}Math: '<S1>/Transpose1' */
+for (indxI = 0; indxI < 120; indxI++) {
+    for (planeOffset = 0; planeOffset < 160; planeOffset++) {
+        cameraModel_B.Blue[planeOffset + 160 * indxI] = cameraModel_B.ColorSpaceConversion_o1[120 * planeOffset + indxI];
+    }
+}
+/* {E!d14}End of Math: '<S1>/Transpose1' */
+
+/* {S!d16}Selector: '<S1>/y1' incorporates:
+ *  Constant: '<S1>/Constant'
+ */
+for (i = 0; i < 9600; i++) {
+    cameraModel_B.MatrixConcatenate[i] = cameraModel_B.Blue[(int32_T)cameraModel_P_g.Constant_Value[i] - 1];
+}
+/* {E!d16}End of Selector: '<S1>/y1' */
+
+/* {S!d18}Math: '<S1>/Transpose2' */
+for (indxI = 0; indxI < 120; indxI++) {
+    for (planeOffset = 0; planeOffset < 160; planeOffset++) {
+        cameraModel_B.Red[planeOffset + 160 * indxI] = cameraModel_B.ColorSpaceConversion_o2[120 * planeOffset + indxI];
+    }
+}
+for (i = 0; i < 9600; i++) {
+    /* {S!d20}Selector: '<S1>/u' incorporates:
+ *  Constant: '<S1>/Constant2'
+ *  Math: '<S1>/Transpose2'
+ */
+    cameraModel_B.MatrixConcatenate[9600 + i] = cameraModel_B.Red[(int32_T)cameraModel_P_g.Constant2_Value[i] - 1];
+    /* {S!d22}Selector: '<S1>/y2' incorporates:
+ *  Constant: '<S1>/Constant1'
+ */
+    cameraModel_B.MatrixConcatenate[i + 19200] = cameraModel_B.Blue[(int32_T)cameraModel_P_g.Constant1_Value[i] - 1];
+}
+/* {S!d24}Math: '<S1>/Transpose3' */
+for (indxI = 0; indxI < 120; indxI++) {
+    for (planeOffset = 0; planeOffset < 160; planeOffset++) {
+        cameraModel_B.Red[planeOffset + 160 * indxI] = cameraModel_B.ColorSpaceConversion_o3[120 * planeOffset + indxI];
+    }
+}
+for (indxI = 0; indxI < 9600; indxI++) {
+    /* {S!d26}Selector: '<S1>/v' incorporates:
+ *  Constant: '<S1>/Constant3'
+ *  Math: '<S1>/Transpose3'
+ */
+    cameraModel_B.MatrixConcatenate[28800 + indxI] = cameraModel_B.Red[(int32_T)cameraModel_P_g.Constant3_Value[indxI] - 1];
+    /* {S!d28}Math: '<S1>/Transpose' */
+    planeOffset = indxI << 2;
+    rty_image_data[planeOffset] = cameraModel_B.MatrixConcatenate[indxI];
+    rty_image_data[1 + planeOffset] = cameraModel_B.MatrixConcatenate[indxI + 9600];
+    rty_image_data[2 + planeOffset] = cameraModel_B.MatrixConcatenate[indxI + 19200];
+    rty_image_data[3 + planeOffset] = cameraModel_B.MatrixConcatenate[indxI + 28800];
+}
+%closefile cfgTxt
+%<cfgTxt>
+%assign rtmArgSys = ::CompiledModel.System[::CompiledModel.System[::CompiledModel.RTWCGModules.RTWCGModule[0].CGSystemIdx].NonInlinedParentSystemIdx]
+%if SysFcnArgNeeded("Output", rtmArgSys.Interface.RTMArgDef, rtmArgSys.CurrentTID, FcnSysModuleIsRateGrouping(rtmArgSys, "Output"))
+%<SLibCG_AccessArg(0, 1, 0)>
+%endif
+%if SLibCG_ArgAccessed(0, 1, 0)
+%<SLibAccessArg(rtmArgSys.Interface.RTMArgDef, "Output", rtmArgSys.CurrentTID, FcnSysModuleIsRateGrouping(rtmArgSys, "Output"))>
+%endif
+%if (IsModelReferenceBaseSys(rtmArgSys) && (IsModelRefScalableBuild() || GenerateClassInterface)) ||...
+(GenerateClassInterface && SLibIsMultiInstanceServer(rtmArgSys))
+%<SLibCG_UndoAccessArg(0, 1, 0)>
+%endif
+%<LibSetSystemField(system, "CachedOutputLocalVars", localVarDecl)>
+%endfunction
+%function OutputsFcnProtoType(block, system) Output
+%assign fcnProtoType = ""
+%openfile fcnProtoType
+static void cameraModel(\
+%assign comma = ""
+%if SLibCG_ArgAccessed(0, 1, 0)
+%<comma>%<::tSimStructType> * const %<::tSimStruct>\
+%assign comma = ", "
+%endif
+%<comma>uint8_T rty_image_data[38400]\
+%assign comma = ", "
+%closefile fcnProtoType
+%<SLibCG_SetFcnProtoType(0, 1, fcnProtoType)>
+%endfunction
